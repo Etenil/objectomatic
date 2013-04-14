@@ -1,0 +1,20 @@
+{
+	"name": "etenil/objectomatic",
+    "description": "A lean and slim ORM for PHP that does the minimum.",
+    "keywords": ["ORM"],
+    "homepage": "http://githum.com/etenil/objectomatic",
+    "type": "library",
+    "license": "GPL-3.0+",
+    "authors": [
+        {
+            "name": "Guillaume 'Etenil' Pasquet",
+            "email": "boss@etenil.net",
+            "homepage": "http://blog.etenil.net"
+        }
+    ],
+    "autoload": {
+        "psr-0": {
+            "objectomatic": "src/"
+        }
+	}
+}
