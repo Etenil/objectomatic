@@ -132,14 +132,15 @@ class MySQLPDO implements IDriver
             throw new DriverError($error[2]);
         }
 
-        $object_class = $object->getTypeName();
+        $object_class = get_class($object);
         $objects = array();
         if($rowset->rowCount() < 1) {
             return false;
         } else {
-            while($row = $rowset->fetch()) {
+            while($row = $rowset->fetch(\PDO::FETCH_ASSOC)) {
                 $objects[] = new $object_class($row);
             }
+
             return $objects;
         }
     }
@@ -169,7 +170,7 @@ class MySQLPDO implements IDriver
         if($rowset->rowCount() < 1) {
             return false;
         } else {
-            $object->populate($rowset->fetch());
+            $object->populate($rowset->fetch(\PDO::FETCH_ASSOC));
             return true;
         }
     }
