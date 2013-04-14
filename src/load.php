@@ -2,7 +2,7 @@
 
 /** PSR-0 Autoloader for people who don't use Composer. */
 
-function __autoload($className)
+function objectomatic_autoload($className)
 {
     $className = ltrim($className, '\\');
     $fileName  = '';
@@ -16,4 +16,6 @@ function __autoload($className)
 
     require $fileName;
 }
+
+spl_autoload_register('objectomatic_autoload');
 

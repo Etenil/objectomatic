@@ -7,7 +7,7 @@ require('src/load.php');
 /**
  * DAO utility.
  */
-class Module_DAO extends \assegai\Module
+class Module_Objectomatic extends \assegai\Module
 {
     protected $driver;
 
