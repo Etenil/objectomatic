@@ -18,11 +18,11 @@ class Module_Objectomatic extends \assegai\Module
 
     function _init($options)
     {
-        $this->connection = new \objectomatic\drivers\MySQLPDO($options);
+        $this->driver = new \objectomatic\drivers\MySQLPDO($options);
     }
 
     function __call($name, array $args) {
-        if(!method_exists($name, $this)) {
+        if(!method_exists($this, $name)) {
             return call_user_func_array(array($this->driver, $name), $args);
         }
     }
