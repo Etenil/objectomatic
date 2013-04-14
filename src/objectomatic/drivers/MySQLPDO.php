@@ -40,17 +40,23 @@ class MySQLPDO implements IDriver
                             $options);
     }
 
-    protected function sqlType(IField $field) {
-        $allow_null = true;
-        $allow_default = true;
-
-        $type_decl = "";
+    protected function fieldClass(IField $field) {
         $field_class = get_class($field);
         // Let's strip those idiotic namespaces.
         $ns_length = strlen("objectomatic\\fields\\");
         if(substr($field_class, 0, $ns_length) == 'objectomatic\\fields\\') {
             $field_class = substr($field_class, $ns_length);
         }
+
+        return $field_class;
+    }
+    
+    protected function sqlType(IField $field) {
+        $allow_null = true;
+        $allow_default = true;
+
+        $type_decl = "";
+        $field_class = $this->fieldClass($field);
         
         switch($field_class) {
             case 'Integer':
@@ -76,6 +82,7 @@ class MySQLPDO implements IDriver
                 $type_decl =  'FLOAT';
                 break;
             case 'PositiveInteger':
+            case 'ForeignKey':
             case 'IPAddress':
                 $type_decl =  'INTEGER UNSIGNED';
                 break;
@@ -138,7 +145,9 @@ class MySQLPDO implements IDriver
             return false;
         } else {
             while($row = $rowset->fetch(\PDO::FETCH_ASSOC)) {
-                $objects[] = new $object_class($row);
+                $obj = new $object_class();
+                $this->loadRow($obj, $row);
+                $objects[] = $obj;
             }
 
             return $objects;
@@ -170,9 +179,27 @@ class MySQLPDO implements IDriver
         if($rowset->rowCount() < 1) {
             return false;
         } else {
-            $object->populate($rowset->fetch(\PDO::FETCH_ASSOC));
+            // Populating and resolving foreign keys.
+            $this->loadRow($object, $rowset->fetch(\PDO::FETCH_ASSOC));
             return true;
         }
+    }
+
+    function loadRow(Storable $object, $row) {
+        if(!$row) {
+            return false;
+        }
+        foreach($object->signature() as $field) {
+            if(get_class($field) == 'objectomatic\\fields\\ForeignKey') {
+                $deptype = get_class($field->getForeignType());
+                $dependency = new $deptype();
+                $this->load($dependency, $row[$field->getName()]);
+                $row[$field->getName()] = $dependency;
+            }
+        }
+        $object->populate($row);
+
+        return true;
     }
 
     function create(Storable $object) {
@@ -227,7 +254,13 @@ class MySQLPDO implements IDriver
         // And now we bind the values to the prepared statement.
         foreach($struct as $field) {
             if($field->getName() == 'id') continue;
-            $stmt->bindValue(':' . $field->getName(), $field->getVal());
+            if($this->fieldClass($field) == 'ForeignKey') {
+                $stmt->bindValue(':' . $field->getName(),
+                    $field->getVal()->getId());
+            } else {
+                $stmt->bindValue(':' . $field->getName(),
+                    $field->getVal());
+            }
         }
 
         if(!$stmt->execute()) {
